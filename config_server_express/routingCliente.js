@@ -13,11 +13,11 @@ router.post
 router.post
   ('/Registro', clienteController.registro);
 router.get
-  ('/ComprobarEmail', clienteController.comprobarEmail)
+  ('/ComprobarEmail', clienteController.ComprobarEmail)
 router.get
   ('/LoginGoogle', clienteController.loginGoogle);
 router.get
-  ('/ValidarEmail', clienteController.validarEmail)
+  ('/ActivarCuenta', clienteController.ActivarCuenta)
 
 
 module.exports = router; 

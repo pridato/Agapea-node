@@ -16,7 +16,7 @@ const provider = new GoogleAuthProvider(); // <-- servicio acceso google provide
 
 // --------------- CONFIGURACION ACCESO: FIREBASE-DATABASE ----------------
 
-const { query, collection, where, getDocs, addDoc, getFirestore, updateDoc } = require('firebase/firestore');
+const { query, collection, where, getDocs, addDoc, getFirestore, updateDoc, doc } = require('firebase/firestore');
 
 const db = getFirestore(app) // servicio acceso a todas las colecciones de la DB definida en firebase-database
 
@@ -46,9 +46,9 @@ module.exports = {
           codigo: 0,
           mensaje: 'registro ok...',
           errores: null,
-          datoscliente: _userCredentials.user ,
+          datoscliente: await result.user ,
           otrosdatos: null,
-          token: ''
+          token: await result.user.getIdToken()
         }
       )
 
@@ -67,7 +67,56 @@ module.exports = {
     }
     
   },
-  comprobarEmail: async (req, res, next) => {},
+  ActivarCuenta: async (req, res, next) => {
+    let {mode, code, key} = req.query
+    try {
+      console.log(req.query)
+
+      let _actionCode = await checkActionCode(auth, code)
+      console.log('action code en activar cuenta usuario firebase...', _actionCode)
+
+      // query snapshot query...
+      let querySnapshot = await getDocs(query(collection(db, 'clientes'), where('cuenta.email', '==', _actionCode.data.email)))
+      console.log('query... ', querySnapshot)
+
+      switch(_actionCode.operation){
+        case 'VERIFY_EMAIL':
+          let userDocRef = doc(db, 'clientes', querySnapshot.docs[0].id)
+          await applyActionCode(auth, code)
+          .then(()=> {
+            console.log('email verificado correctamente...')
+          })
+          await updateDoc(userDocRef, {'cuenta.cuentaActiva': true })
+          break;
+      }
+      res.status(200).send(
+        {
+          codigo: 0,
+          mensaje: 'registro ok...',
+          errores: null,
+          datoscliente: null ,
+          otrosdatos: null,
+          token: null
+        }
+      )
+
+    } catch(error){
+      console.log(error)
+      res.status(500).send(
+        {
+          codigo: 1,
+          mensaje: 'registro fallido...',
+          errores: error.mensaje,
+          datoscliente: null ,
+          otrosdatos: null,
+          token: null
+        }
+      )
+    }
+  },
+  ComprobarEmail: async (req, res, next) => {
+    
+  },
   loginGoogle: async (req, res, next) => {},
-  validarEmail: async (req, res, next) => {}
+  
 } 
