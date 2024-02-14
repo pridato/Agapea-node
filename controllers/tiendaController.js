@@ -19,13 +19,16 @@ module.exports = {
     console.log('buscando libros de la categoria...', cat)
 
     try {
+      if(cat === '1') res.status(200).send([])
+      else{
+        let _snapshot = await getDocs(query(collection(db, 'libros'), orderBy('IdCategoria'),startAt(cat)))
 
-      let _snapshot = await getDocs(query(collection(db, 'libros'), orderBy('IdCategoria'),startAt(cat)))
-
-      let libros = []
-
-      _snapshot.forEach(snap => libros.push(snap.data()))
-      res.status(200).send(libros)
+        let libros = []
+  
+        _snapshot.forEach(snap => libros.push(snap.data()))
+        res.status(200).send(libros)
+      }
+      
 
     }catch(error){
       res.status(500).send([])
@@ -42,7 +45,8 @@ module.exports = {
       let _regex;
       if (_idcat == "2-10") {
         _regex = new RegExp("^[0-9]{1,}$");
-      } else {
+      } 
+      else {
         _regex = new RegExp("^" + _idcat + "-[0-9]{1,}$")
       }
       let _catSnaps = await getDocs(query(collection(db, 'categorias'), orderBy('IdCategoria')));
@@ -56,7 +60,20 @@ module.exports = {
     }
   },
   recuperarLibro: async (req, res, next) => {
- 
+    try {
+      let _isbn=req.query.isbn;
+      console.log('recuperando libro con isbn...', _isbn);
+
+      let _librosnaps=await getDocs( query(collection(db,'libros'),where('ISBN13','==',_isbn)) );
+      let _libro={};
+      _librosnaps.forEach( librosnap=> _libro=librosnap.data());
+
+      res.status(200).send(_libro);
+
+    } catch(error){
+      console.log(error)
+      res.status(500).send()
+    }
   },
   RecuperarProvincias: async(req, res, next) => {
     
