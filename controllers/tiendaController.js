@@ -32,7 +32,28 @@ module.exports = {
     }
   },
   recuperarCategorias: async (req, res, next) => {
+    console.log('recuperando... ', req.query)
+    let _cat = req.query
 
+    try {
+
+      let _idcat = req.query.idcat;
+      console.log('categoria...', _idcat)
+      let _regex;
+      if (_idcat == "2-10") {
+        _regex = new RegExp("^[0-9]{1,}$");
+      } else {
+        _regex = new RegExp("^" + _idcat + "-[0-9]{1,}$")
+      }
+      let _catSnaps = await getDocs(query(collection(db, 'categorias'), orderBy('IdCategoria')));
+
+      let _cats = [];
+      _catSnaps.forEach(catdoc => _cats.push(catdoc.data()));
+      res.status(200).send(_cats.filter(cat => _regex.test(cat.IdCategoria)).sort((a, b) => parseInt(a.IdCategoria) < parseInt(b.IdCategoria) ? -1 : 1));
+
+    } catch(error){
+      res.status(500).send([])
+    }
   },
   recuperarLibro: async (req, res, next) => {
  
