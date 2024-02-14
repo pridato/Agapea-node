@@ -24,6 +24,42 @@ const db = getFirestore(app) // servicio acceso a todas las colecciones de la DB
 module.exports = {
   login: async (req, res, next) => {
 
+    const {email, password} = req.body
+  
+    let _userCredentials = await signInWithEmailAndPassword(auth, email, password)
+
+    let emailVerified = _userCredentials.user.emailVerified
+    if(emailVerified){
+      let _clienteSnapShot = await getDocs(query(collection(db, 'clientes'), where('cuenta.email', '==', req.body.email)))
+
+      let _datoscliente = _clienteSnapShot.docs.shift().data();
+      console.log('datos del cliente recuperados... ', _datoscliente)
+
+      res.status(200).send(
+        {
+          codigo: 0,
+          mensaje: 'login ok...',
+          errores: null,
+          datoscliente: _datoscliente,
+          token: await _userCredentials.user.getIdToken(),
+          otrosdatos: {'emailVerificado':_userCredentials.user.emailVerified}
+        }
+      )
+    }else{
+      res.status(500).send(
+        {
+          codigo: 1,
+          mensaje: 'cuenta no confirmada...',
+          errores: null,
+          datoscliente: null,
+          token: null,
+          otrosdatos: {'emailVerificado':_userCredentials.user.emailVerified}
+        }
+      )
+    }
+
+    
+
   },
   registro: async (req, res, next) => {
 
@@ -115,7 +151,40 @@ module.exports = {
     }
   },
   ComprobarEmail: async (req, res, next) => {
-    
+    try {
+      console.log('datos mandados desde la directiva', req.query.email)
+      let _email = req.query.email;
+
+      let _resulSnap = await getDocs(query(collection(db, 'clientes'), where('cuenta.email', '==', _email)))
+      let _datoscliente = _resulSnap.docs.shift().data;
+      console.log('datos del cliente recuperados con email...', _datoscliente)
+      if(_datoscliente){
+        res.status(200).send(
+          {
+            codigo: 0,
+            mensaje: 'email existente',
+            error: null,
+            datoscliente: _datoscliente,
+            otrosdatos: null,
+            token: null
+          }
+        )
+      }else {
+        throw new Error('Cliente no localizado')
+      }
+    } catch(error){
+      console.log('error en la comprobacion del email', error)
+      res.status(500).send(
+        {
+          codigo: 1,
+          mensaje: 'email inexistente',
+          error: error.mensaje,
+          datoscliente: null,
+          otrosdatos: null,
+          token: null
+        }
+      )
+    }
   },
   loginGoogle: async (req, res, next) => {},
   
